@@ -1,0 +1,46 @@
+name: CI/CD Pipeline  # 👈 The name of this workflow in GitHub Actions UI
+
+on:
+  push:
+    branches: [main]  # 👈 This triggers the workflow only on pushes to the "main" branch
+
+jobs:
+  build-test-push:   # 👈 Name of the job (you can name it anything)
+    runs-on: ubuntu-latest  # 👈 GitHub gives us a free Ubuntu virtual machine to run jobs
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+      # 👈 Downloads your repo code into the GitHub Actions runner
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+      # 👈 Installs Python 3.10 on the runner
+
+    - name: Install Dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest
+      # 👈 Installs required packages for your Flask app + pytest for testing
+
+    - name: Run Tests
+      run: pytest
+      # 👈 Runs your tests in test_app.py. If any test fails, the workflow stops here
+
+    - name: Docker Login
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+      # 👈 Logs into Docker Hub using secrets you store in GitHub
+
+    - name: Build and Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+      # 👈 Builds Docker image from your Dockerfile and pushes to Docker Hub
+
